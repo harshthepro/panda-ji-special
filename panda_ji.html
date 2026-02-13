@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For My Cute Panda Baby</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Quicksand:wght@300;500;700&display=swap');
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: #fff5f7;
+            overflow: hidden;
+            touch-action: manipulation;
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cursive { font-family: 'Dancing Script', cursive; }
+
+        @keyframes floatUp {
+            0% { transform: translateY(110vh) scale(0.5); opacity: 0; }
+            50% { opacity: 0.6; }
+            100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.1; transform: scale(0.7); }
+        }
+
+        .heart-bg {
+            position: absolute;
+            animation: floatUp 4s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .blinking {
+            animation: blink 0.8s ease-in-out infinite;
+        }
+
+        .hidden-section { display: none; }
+        
+        .game-item {
+            position: absolute;
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.1s;
+            z-index: 50;
+            padding: 15px;
+            font-size: 2.5rem;
+        }
+
+        #message-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 245, 247, 0.98);
+            z-index: 2000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #game-area {
+            touch-action: none;
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+
+        .panda-container {
+            width: 140px;
+            height: 140px;
+            margin: 0 auto;
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        button {
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="heart-container" class="absolute inset-0 pointer-events-none"></div>
+
+    <!-- CUTE PANDA SVG TEMPLATE -->
+    <template id="cute-panda-svg">
+        <svg viewBox="0 0 200 200" class="w-full h-full">
+            <circle cx="60" cy="60" r="25" fill="#2d2d2d" />
+            <circle cx="140" cy="60" r="25" fill="#2d2d2d" />
+            <circle cx="100" cy="110" r="75" fill="white" stroke="#2d2d2d" stroke-width="3" />
+            <ellipse cx="70" cy="110" rx="22" ry="28" fill="#2d2d2d" />
+            <ellipse cx="130" cy="110" rx="22" ry="28" fill="#2d2d2d" />
+            <circle cx="70" cy="105" r="8" fill="white" />
+            <circle cx="130" cy="105" r="8" fill="white" />
+            <circle cx="50" cy="135" r="12" fill="#ffccd5" opacity="0.8" />
+            <circle cx="150" cy="135" r="12" fill="#ffccd5" opacity="0.8" />
+            <path d="M85 140 Q100 155 115 140" stroke="#2d2d2d" stroke-width="3" fill="none" stroke-linecap="round" />
+            <circle cx="100" cy="132" r="6" fill="#2d2d2d" />
+            <path d="M100 35 Q100 25 110 25 Q120 25 120 35 Q120 45 100 60 Q80 45 80 35 Q80 25 90 25 Q100 25 100 35" fill="#ff4d6d" />
+        </svg>
+    </template>
+
+    <!-- 1. INTRO -->
+    <div id="section-intro" class="text-center z-10 px-6 max-w-md">
+        <div class="panda-container mb-6">
+            <div id="intro-panda"></div>
+        </div>
+        <h1 class="cursive text-5xl text-pink-600 mb-4">Hey Panda baby...</h1>
+        <p class="text-gray-600 text-lg mb-8 font-medium">I have a very special question for you. But first, you must catch my love! Watch out for the bombs! 💣</p>
+        <button onclick="showSection('section-game')" class="w-full py-4 bg-pink-500 text-white rounded-2xl shadow-xl hover:bg-pink-600 font-bold text-xl active:scale-95">
+            I'm Ready! ❤️
+        </button>
+    </div>
+
+    <!-- 2. MINI GAME -->
+    <div id="section-game" class="hidden-section text-center z-10 w-full max-w-sm px-4">
+        <h2 class="cursive text-4xl text-pink-600 mb-2">Love Meter</h2>
+        <p id="game-instruction" class="text-gray-500 mb-4 text-sm font-bold">Catch 10 blinking hearts! 💣 = Restart!</p>
+        
+        <div id="game-area" class="w-full bg-white/70 border-2 border-pink-200 rounded-[30px] overflow-hidden mb-6 shadow-inner relative">
+            <!-- Game elements spawn here -->
+        </div>
+
+        <div class="w-full bg-gray-200 rounded-full h-5 mb-4 p-1 shadow-inner">
+            <div id="progress-bar" class="bg-gradient-to-r from-pink-400 to-pink-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <p id="score-text" class="font-bold text-pink-600 text-xl">Hearts: 0 / 10</p>
+    </div>
+
+    <!-- 3. THE PROPOSAL -->
+    <div id="section-proposal" class="hidden-section text-center z-10 w-full max-w-xs p-8 bg-white/95 backdrop-blur-md rounded-[50px] shadow-2xl border-2 border-pink-100">
+        <div class="panda-container h-24 w-24 mb-4">
+            <div id="proposal-panda"></div>
+        </div>
+        <h2 class="cursive text-4xl text-pink-600 mb-4">
+            Panda baby, will you be my Forever Valentine?
+        </h2>
+        <p class="text-gray-500 mb-10 text-sm px-4 italic">I promise to make every day special for you. - Harsh</p>
+        
+        <div class="flex flex-col gap-4 relative" style="height: 180px;">
+            <button id="yes-button" onclick="celebrate()" class="py-5 bg-green-500 text-white font-bold text-3xl rounded-3xl shadow-xl active:scale-95 z-20">
+                YES! 💖
+            </button>
+            
+            <button id="no-button" 
+                onmouseover="moveButton()" 
+                ontouchstart="moveButton(event)"
+                onclick="handleNoClick()"
+                class="py-4 bg-gray-400 text-white font-bold text-xl rounded-2xl shadow-md transition-all duration-75">
+                No
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. SUCCESS -->
+    <div id="section-success" class="hidden-section text-center z-10 px-6 overflow-y-auto max-h-screen py-10">
+        <div class="panda-container mb-8 scale-150">
+            <div id="success-panda"></div>
+        </div>
+        <h1 class="cursive text-6xl text-pink-600 mb-6">Meri Janeman! 💖</h1>
+        <div class="bg-white/90 p-8 rounded-[40px] shadow-xl border border-pink-100 mb-8 max-w-sm">
+            <p class="text-2xl text-pink-500 cursive leading-relaxed mb-6">
+                "You make me feel all the good and well every time. I am so lucky to have you, Panda."
+            </p>
+            <p class="text-gray-800 font-bold text-lg leading-snug">
+                Definitely soon going to ask you the same not bare hand... but with a ring for sure! 💍
+            </p>
+        </div>
+        <p class="text-pink-400 font-bold text-2xl cursive mb-10 italic">Forever Yours, Harsh</p>
+        <div class="text-7xl animate-bounce">👩‍❤️‍👨</div>
+    </div>
+
+    <!-- MESSAGE OVERLAY (Softened/Cuter) -->
+    <div id="message-overlay">
+        <span id="overlay-emoji" class="text-9xl mb-6">🥺</span>
+        <h2 id="overlay-title" class="text-4xl font-bold mb-4 cursive text-pink-600">Try harder baby!</h2>
+        <p id="overlay-text" class="text-xl text-gray-600 mb-12 px-10">I know you can prove your love for me, don't give up! ❤️</p>
+        <button id="overlay-button" onclick="resetOverlay()" class="px-10 py-5 bg-pink-500 text-white rounded-3xl font-bold text-xl shadow-lg active:scale-95">
+            Let me try again! ❤️
+        </button>
+    </div>
+
+    <script>
+        let score = 0;
+        const totalNeeded = 10;
+        let gameActive = false;
+        let spawnTimeout;
+
+        function injectPandas() {
+            const template = document.getElementById('cute-panda-svg').content;
+            document.getElementById('intro-panda').innerHTML = '';
+            document.getElementById('proposal-panda').innerHTML = '';
+            document.getElementById('success-panda').innerHTML = '';
+            document.getElementById('intro-panda').appendChild(template.cloneNode(true));
+            document.getElementById('proposal-panda').appendChild(template.cloneNode(true));
+            document.getElementById('success-panda').appendChild(template.cloneNode(true));
+        }
+
+        window.onload = injectPandas;
+
+        function showSection(id) {
+            document.querySelectorAll('body > div[id^="section-"]').forEach(s => s.classList.add('hidden-section'));
+            const next = document.getElementById(id);
+            next.classList.remove('hidden-section');
+            
+            if (id === 'section-game') {
+                score = 0;
+                document.getElementById('game-area').innerHTML = '';
+                updateGameUI();
+                gameActive = true;
+                spawnLoop();
+            } else {
+                gameActive = false;
+                clearTimeout(spawnTimeout);
+            }
+        }
+
+        function spawnLoop() {
+            if (!gameActive) return;
+
+            const area = document.getElementById('game-area');
+            const item = document.createElement('div');
+            item.className = 'game-item';
+            
+            const isBomb = Math.random() < 0.25;
+            item.innerHTML = isBomb ? '💣' : '❤️';
+            if (!isBomb) item.classList.add('blinking');
+
+            const blinkSpeed = Math.max(0.12, 0.7 - (score * 0.06));
+            if (!isBomb) item.style.animationDuration = `${blinkSpeed}s`;
+
+            const x = Math.random() * (area.clientWidth - 80);
+            const y = Math.random() * (area.clientHeight - 80);
+            item.style.left = `${x}px`;
+            item.style.top = `${y}px`;
+
+            item.onclick = (e) => {
+                e.stopPropagation();
+                if (isBomb) {
+                    gameActive = false;
+                    showOverlay(
+                        "💥 Oopsie!", 
+                        "You hit a bomb! But I know my Panda baby can catch all the hearts if she tries again! 🥺", 
+                        "Try again for Harsh! ❤️", 
+                        () => showSection('section-game')
+                    );
+                } else {
+                    score++;
+                    updateGameUI();
+                    item.remove();
+                    if (score >= totalNeeded) {
+                        gameActive = false;
+                        setTimeout(() => showSection('section-proposal'), 500);
+                    }
+                }
+            };
+
+            area.appendChild(item);
+            const lifetime = Math.max(600, 2000 - (score * 150));
+            setTimeout(() => { if(item.parentNode) item.remove(); }, lifetime);
+
+            const nextSpawn = Math.max(300, 1100 - (score * 100));
+            spawnTimeout = setTimeout(spawnLoop, nextSpawn);
+        }
+
+        function updateGameUI() {
+            document.getElementById('progress-bar').style.width = `${(score / totalNeeded) * 100}%`;
+            document.getElementById('score-text').innerText = `Hearts: ${score} / ${totalNeeded}`;
+        }
+
+        function showOverlay(title, text, btnText, callback) {
+            const overlay = document.getElementById('message-overlay');
+            document.getElementById('overlay-title').innerText = title;
+            document.getElementById('overlay-text').innerText = text;
+            document.getElementById('overlay-button').innerText = btnText;
+            document.getElementById('overlay-button').onclick = () => {
+                overlay.style.display = 'none';
+                if(callback) callback();
+            };
+            overlay.style.display = 'flex';
+        }
+
+        function moveButton(event) {
+            if(event && event.type === 'touchstart') event.preventDefault();
+            const btn = document.getElementById('no-button');
+            const padding = 40;
+            
+            const maxX = window.innerWidth - btn.offsetWidth - padding;
+            const maxY = window.innerHeight - btn.offsetHeight - padding;
+            
+            const randomX = Math.max(padding, Math.floor(Math.random() * maxX));
+            const randomY = Math.max(padding, Math.floor(Math.random() * maxY));
+            
+            btn.style.position = 'fixed';
+            btn.style.left = `${randomX}px`;
+            btn.style.top = `${randomY}px`;
+            btn.style.zIndex = '1000';
+        }
+
+        function handleNoClick() {
+            showOverlay(
+                "Try harder baby! 🥺", 
+                "You can't say no to Harsh like that! Prove our love and pick the right one! ❤️", 
+                "Let me try again! ❤️", 
+                () => {
+                    const btn = document.getElementById('no-button');
+                    btn.style.position = 'relative';
+                    btn.style.left = '0';
+                    btn.style.top = '0';
+                }
+            );
+        }
+
+        function resetOverlay() {
+            document.getElementById('message-overlay').style.display = 'none';
+        }
+
+        function celebrate() {
+            showSection('section-success');
+            for(let i=0; i<100; i++) {
+                setTimeout(createBgHeart, i * 30);
+            }
+        }
+
+        function createBgHeart() {
+            const container = document.getElementById('heart-container');
+            const heart = document.createElement('div');
+            heart.className = 'heart-bg text-3xl';
+            heart.innerHTML = '❤️';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = (Math.random() * 2 + 2) + 's';
+            container.appendChild(heart);
+            setTimeout(() => heart.remove(), 4000);
+        }
+
+        setInterval(createBgHeart, 500);
+    </script>
+</body>
+</html>
